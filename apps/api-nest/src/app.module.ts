@@ -48,6 +48,6 @@ import { TenantContextMiddleware } from './common/middleware/tenant-context.midd
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantContextMiddleware).forRoutes('*');
+    consumer.apply(TenantContextMiddleware).forRoutes('{*path}');
   }
 }

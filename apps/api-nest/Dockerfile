@@ -20,6 +20,7 @@ COPY . .
 
 RUN npm run db:generate
 RUN npm run build --workspace=@mypos/api
+RUN test -f /app/apps/api-nest/dist/main.js
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner
@@ -44,9 +45,11 @@ RUN npm ci --omit=dev
 COPY --from=builder /app/apps/api-nest/dist ./apps/api-nest/dist
 COPY --from=builder /app/packages/db-prisma/prisma ./packages/db-prisma/prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+RUN test -f /app/apps/api-nest/dist/main.js
 
 USER nestjs
+WORKDIR /app/apps/api-nest
 
 EXPOSE 4000
 
-CMD ["sh", "-c", "npm run start:prod --workspace=@mypos/api"]
+CMD ["node", "dist/main.js"]

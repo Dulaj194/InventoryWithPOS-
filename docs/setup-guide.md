@@ -82,6 +82,7 @@ API_PREFIX=api/v1
 
 MYSQL_ROOT_PASSWORD=your_secure_mysql_password
 DATABASE_URL=mysql://root:your_secure_mysql_password@localhost:3306/mypos_system
+REDIS_PASSWORD=your_secure_redis_password
 REDIS_URL=redis://localhost:6379
 
 JWT_ACCESS_SECRET=your_256_bit_jwt_access_secret
@@ -329,6 +330,7 @@ docker compose -f infra/docker/docker-compose.yml up -d --scale api=3
 #### External Services
 | Variable | Description | Example |
 |----------|-------------|---------|
+| `REDIS_PASSWORD` | Redis password used by Docker services | `StrongRedisPass123!` |
 | `REDIS_URL` | Redis connection URL | `redis://localhost:6379` |
 | `CORS_ORIGIN` | Allowed CORS origins | `https://myapp.com` |
 
