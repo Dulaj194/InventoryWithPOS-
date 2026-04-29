@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+npm-debug.log
+.git
+.gitignore
+.vscode
+.idea
+coverage
+**/dist
+**/.next
+**/.dart_tool
+**/build

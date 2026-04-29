@@ -1,0 +1,13 @@
+node_modules
+.pnpm-store
+.env
+.env.*.local
+dist
+coverage
+.next
+.dart_tool
+build
+.idea
+.vscode/*.code-snippets
+apps/api-nest/prisma/generated
+apps/api-nest/logs

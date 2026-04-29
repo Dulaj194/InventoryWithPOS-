@@ -1,0 +1,21 @@
+{
+  "name": "mypossystem-monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "packageManager": "npm@10.9.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:api",
+    "dev:api": "npm run dev --workspace=@mypos/api",
+    "dev:web": "npm run dev --workspace=@mypos/web",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run prisma:generate --workspace=@mypos/db",
+    "db:push": "npm run prisma:push --workspace=@mypos/db",
+    "db:migrate": "npm run prisma:migrate --workspace=@mypos/db",
+    "db:seed": "npm run prisma:seed --workspace=@mypos/db"
+  }
+}

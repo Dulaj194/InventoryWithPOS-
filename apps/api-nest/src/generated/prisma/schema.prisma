@@ -1,0 +1,530 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../apps/api-nest/src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+  PENDING
+  REJECTED
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  GRACE
+  EXPIRED
+  CANCELLED
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum OrderStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+  MOBILE_WALLET
+}
+
+enum StockAction {
+  PURCHASE
+  SALE
+  ADJUSTMENT
+  RETURN_IN
+  RETURN_OUT
+  TRANSFER_IN
+  TRANSFER_OUT
+  OPENING
+}
+
+enum IdempotencyStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum SettingsRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Tenant {
+  id               String            @id @default(cuid())
+  code             String            @unique @db.VarChar(30)
+  name             String            @db.VarChar(120)
+  email            String            @unique @db.VarChar(191)
+  phone            String?           @db.VarChar(30)
+  timezone         String            @default("Asia/Colombo") @db.VarChar(60)
+  currency         String            @default("LKR") @db.VarChar(10)
+  enableInventory  Boolean           @default(true)
+  enablePos        Boolean           @default(true)
+  enableReports    Boolean           @default(true)
+  enableAccounting Boolean           @default(false)
+  enableKds        Boolean           @default(false)
+  status           TenantStatus      @default(PENDING)
+  approvalNotes    String?           @db.VarChar(255)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  deletedAt        DateTime?
+  subscriptions    Subscription[]
+  outlets          Outlet[]
+  terminals        Terminal[]
+  users            User[]
+  categories       Category[]
+  products         Product[]
+  suppliers        Supplier[]
+  customers        Customer[]
+  purchases        Purchase[]
+  orders           Order[]
+  stockLedgers     StockLedger[]
+  settingsRequest  SettingsRequest[]
+  auditLogs        AuditLog[]
+  idempotencyKeys  IdempotencyKey[]
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("tenants")
+}
+
+model Plan {
+  id            String         @id @default(cuid())
+  code          String         @unique @db.VarChar(40)
+  name          String         @db.VarChar(120)
+  monthlyPrice  Decimal        @db.Decimal(10, 2)
+  annualPrice   Decimal?       @db.Decimal(10, 2)
+  maxOutlets    Int            @default(1)
+  maxUsers      Int            @default(10)
+  featureFlags  Json
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  subscriptions Subscription[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id         String             @id @default(cuid())
+  tenantId   String
+  planId     String
+  status     SubscriptionStatus @default(TRIAL)
+  startsAt   DateTime
+  endsAt     DateTime
+  graceUntil DateTime?
+  autoRenew  Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan       Plan               @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([tenantId, status])
+  @@index([endsAt])
+  @@map("subscriptions")
+}
+
+model Role {
+  id              String           @id @default(cuid())
+  code            String           @unique @db.VarChar(50)
+  name            String           @db.VarChar(80)
+  isSystem        Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  code            String           @unique @db.VarChar(100)
+  name            String           @db.VarChar(120)
+  resource        String           @db.VarChar(50)
+  action          String           @db.VarChar(50)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rolePermissions RolePermission[]
+
+  @@index([resource, action])
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model User {
+  id                String            @id @default(cuid())
+  tenantId          String?
+  outletId          String?
+  email             String            @unique @db.VarChar(191)
+  fullName          String            @db.VarChar(120)
+  passwordHash      String            @db.VarChar(255)
+  status            UserStatus        @default(ACTIVE)
+  isSuperAdmin      Boolean           @default(false)
+  lastLoginAt       DateTime?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  tenant            Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet            Outlet?           @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  userRoles         UserRole[]
+  purchasesCreated  Purchase[]        @relation("PurchaseCreatedBy")
+  ordersCreated     Order[]           @relation("OrderCreatedBy")
+  paymentsReceived  Payment[]         @relation("PaymentReceivedBy")
+  stockEntries      StockLedger[]     @relation("StockLedgerCreatedBy")
+  settingsRequested SettingsRequest[] @relation("SettingsRequestedBy")
+  settingsReviewed  SettingsRequest[] @relation("SettingsReviewedBy")
+  auditLogs         AuditLog[]
+
+  @@index([tenantId, status])
+  @@map("users")
+}
+
+model UserRole {
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+model Outlet {
+  id          String        @id @default(cuid())
+  tenantId    String
+  code        String        @db.VarChar(25)
+  name        String        @db.VarChar(120)
+  address     String?       @db.VarChar(255)
+  phone       String?       @db.VarChar(30)
+  isMain      Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users       User[]
+  terminals   Terminal[]
+  purchases   Purchase[]
+  orders      Order[]
+  stockLedger StockLedger[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, name])
+  @@map("outlets")
+}
+
+model Terminal {
+  id         String    @id @default(cuid())
+  tenantId   String
+  outletId   String
+  code       String    @db.VarChar(25)
+  name       String    @db.VarChar(80)
+  isActive   Boolean   @default(true)
+  lastSeenAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet     Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  orders     Order[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, outletId])
+  @@map("terminals")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  tenantId    String
+  name        String    @db.VarChar(100)
+  slug        String    @db.VarChar(140)
+  description String?   @db.VarChar(255)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products    Product[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, name])
+  @@map("categories")
+}
+
+model Product {
+  id             String         @id @default(cuid())
+  tenantId       String
+  categoryId     String?
+  sku            String         @db.VarChar(50)
+  barcode        String?        @db.VarChar(80)
+  name           String         @db.VarChar(120)
+  unit           String         @default("PCS") @db.VarChar(20)
+  salePrice      Decimal        @db.Decimal(12, 2)
+  costPrice      Decimal        @default(0) @db.Decimal(12, 2)
+  taxRate        Decimal        @default(0) @db.Decimal(5, 2)
+  reorderLevel   Decimal        @default(0) @db.Decimal(12, 3)
+  quantityOnHand Decimal        @default(0) @db.Decimal(14, 3)
+  isActive       Boolean        @default(true)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  purchaseItems  PurchaseItem[]
+  orderItems     OrderItem[]
+  stockLedgers   StockLedger[]
+
+  @@unique([tenantId, sku])
+  @@index([tenantId, name])
+  @@index([tenantId, isActive])
+  @@map("products")
+}
+
+model Supplier {
+  id        String     @id @default(cuid())
+  tenantId  String
+  code      String     @db.VarChar(40)
+  name      String     @db.VarChar(120)
+  email     String?    @db.VarChar(191)
+  phone     String?    @db.VarChar(30)
+  address   String?    @db.VarChar(255)
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, name])
+  @@map("suppliers")
+}
+
+model Customer {
+  id            String   @id @default(cuid())
+  tenantId      String
+  code          String?  @db.VarChar(40)
+  name          String   @db.VarChar(120)
+  email         String?  @db.VarChar(191)
+  phone         String?  @db.VarChar(30)
+  loyaltyPoints Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders        Order[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId, phone])
+  @@map("customers")
+}
+
+model Purchase {
+  id           String         @id @default(cuid())
+  tenantId     String
+  outletId     String
+  supplierId   String?
+  invoiceNo    String?        @db.VarChar(80)
+  purchaseDate DateTime
+  subTotal     Decimal        @db.Decimal(12, 2)
+  taxTotal     Decimal        @default(0) @db.Decimal(12, 2)
+  totalAmount  Decimal        @db.Decimal(12, 2)
+  notes        String?        @db.VarChar(255)
+  createdById  String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet       Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  supplier     Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  createdBy    User?          @relation("PurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items        PurchaseItem[]
+
+  @@index([tenantId, purchaseDate])
+  @@index([tenantId, outletId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id         String   @id @default(cuid())
+  purchaseId String
+  productId  String
+  quantity   Decimal  @db.Decimal(14, 3)
+  unitCost   Decimal  @db.Decimal(12, 2)
+  lineTotal  Decimal  @db.Decimal(12, 2)
+  createdAt  DateTime @default(now())
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  tenantId    String
+  outletId    String
+  terminalId  String?
+  customerId  String?
+  orderNo     String      @db.VarChar(50)
+  status      OrderStatus @default(OPEN)
+  subTotal    Decimal     @db.Decimal(12, 2)
+  discount    Decimal     @default(0) @db.Decimal(12, 2)
+  taxTotal    Decimal     @default(0) @db.Decimal(12, 2)
+  grandTotal  Decimal     @db.Decimal(12, 2)
+  paidAmount  Decimal     @default(0) @db.Decimal(12, 2)
+  dueAmount   Decimal     @default(0) @db.Decimal(12, 2)
+  notes       String?     @db.VarChar(255)
+  createdById String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet      Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  terminal    Terminal?   @relation(fields: [terminalId], references: [id], onDelete: SetNull)
+  customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  createdBy   User?       @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  items       OrderItem[]
+  payments    Payment[]
+
+  @@unique([tenantId, orderNo])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String   @db.VarChar(120)
+  quantity    Decimal  @db.Decimal(14, 3)
+  unitPrice   Decimal  @db.Decimal(12, 2)
+  discount    Decimal  @default(0) @db.Decimal(12, 2)
+  taxTotal    Decimal  @default(0) @db.Decimal(12, 2)
+  lineTotal   Decimal  @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Restrict)
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  orderId      String
+  amount       Decimal       @db.Decimal(12, 2)
+  method       PaymentMethod
+  referenceNo  String?       @db.VarChar(80)
+  paidAt       DateTime      @default(now())
+  receivedById String?
+  createdAt    DateTime      @default(now())
+  order        Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  receivedBy   User?         @relation("PaymentReceivedBy", fields: [receivedById], references: [id], onDelete: SetNull)
+
+  @@index([orderId, paidAt])
+  @@map("payments")
+}
+
+model StockLedger {
+  id            String      @id @default(cuid())
+  tenantId      String
+  outletId      String
+  productId     String
+  action        StockAction
+  referenceType String      @db.VarChar(50)
+  referenceId   String      @db.VarChar(80)
+  quantityIn    Decimal     @default(0) @db.Decimal(14, 3)
+  quantityOut   Decimal     @default(0) @db.Decimal(14, 3)
+  balanceAfter  Decimal     @db.Decimal(14, 3)
+  unitCost      Decimal?    @db.Decimal(12, 2)
+  notes         String?     @db.VarChar(255)
+  occurredAt    DateTime    @default(now())
+  createdById   String?
+  createdAt     DateTime    @default(now())
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet        Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Restrict)
+  createdBy     User?       @relation("StockLedgerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, productId, occurredAt])
+  @@index([tenantId, outletId, occurredAt])
+  @@map("stock_ledger")
+}
+
+model SettingsRequest {
+  id               String                @id @default(cuid())
+  tenantId         String
+  requestedById    String
+  status           SettingsRequestStatus @default(PENDING)
+  requestedChanges Json
+  currentSettings  Json
+  requestReason    String?               @db.VarChar(255)
+  reviewNotes      String?               @db.VarChar(255)
+  reviewedById     String?
+  reviewedAt       DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requestedBy      User                  @relation("SettingsRequestedBy", fields: [requestedById], references: [id], onDelete: Cascade)
+  reviewedBy       User?                 @relation("SettingsReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, status])
+  @@map("settings_requests")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String?
+  userId    String?
+  action    String   @db.VarChar(50)
+  entity    String   @db.VarChar(50)
+  entityId  String?  @db.VarChar(80)
+  payload   Json?
+  ipAddress String?  @db.VarChar(64)
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model IdempotencyKey {
+  id           String            @id @default(cuid())
+  tenantId     String
+  key          String            @db.VarChar(120)
+  requestHash  String            @db.VarChar(255)
+  status       IdempotencyStatus @default(IN_PROGRESS)
+  responseCode Int?
+  responseBody Json?
+  expiresAt    DateTime
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  tenant       Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, key])
+  @@index([expiresAt])
+  @@map("idempotency_keys")
+}
