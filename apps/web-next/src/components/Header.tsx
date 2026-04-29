@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import OfflineStatus from './OfflineStatus';
 
 interface HeaderProps {
   title?: string;
@@ -30,6 +31,7 @@ export default function Header({ title, onMenuToggle }: HeaderProps) {
       </div>
 
       <div className="header-right">
+        <OfflineStatus />
         <div className="header-actions">
           <button className="action-btn" title="Notifications">
             🔔

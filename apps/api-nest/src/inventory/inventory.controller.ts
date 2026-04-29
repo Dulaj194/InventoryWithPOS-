@@ -132,4 +132,18 @@ export class InventoryController {
   ) {
     return this.inventoryService.stockLedger(req.user, productId);
   }
+
+  @Get('products/barcode/:barcode')
+  @Roles(
+    ROLE_CODES.TENANT_ADMIN,
+    ROLE_CODES.MANAGER,
+    ROLE_CODES.CASHIER,
+    ROLE_CODES.INVENTORY_CLERK,
+  )
+  productsByBarcode(
+    @Req() req: AuthenticatedRequest,
+    @Param('barcode') barcode: string,
+  ) {
+    return this.inventoryService.getProductByBarcode(req.user, barcode);
+  }
 }

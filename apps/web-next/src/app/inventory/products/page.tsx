@@ -197,16 +197,16 @@ export default function ProductsPage() {
                 const stockStatus = getStockStatus(product);
                 return (
                   <tr key={product.id}>
-                    <td>
+                    <td data-label="SKU">
                       <code className="sku">{product.sku}</code>
                     </td>
-                    <td>
+                    <td data-label="Product Name">
                       <div className="product-name">
                         <strong>{product.name}</strong>
                       </div>
                     </td>
-                    <td>{product.category?.name || '-'}</td>
-                    <td>
+                    <td data-label="Category">{product.category?.name || '-'}</td>
+                    <td data-label="Stock">
                       <div className="stock-info">
                         <span className="quantity">{product.quantityOnHand}</span>
                         <span className="reorder-level">
@@ -214,13 +214,13 @@ export default function ProductsPage() {
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Price">
                       <div className="price-info">
                         <span className="sale-price">${product.salePrice}</span>
                         <span className="cost-price">Cost: ${product.costPrice}</span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Status">
                       <div className="status-badges">
                         <span
                           className="status-badge"
@@ -233,7 +233,7 @@ export default function ProductsPage() {
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label="Actions">
                       <div className="action-buttons">
                         <button className="btn small secondary">Edit</button>
                         <button className="btn small danger">Delete</button>

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '../../components/DashboardLayout';
+import { PosFrontendService } from '../../lib/posService';
+import ScannerModal from '../../components/ScannerModal';
+import { apiFetch } from '../../lib/api';
 
 interface DashboardStats {
   totalOrders: number;
@@ -36,6 +39,28 @@ export default function DashboardPage() {
     });
     setLoading(false);
   }, []);
+
+  const handleNewOrder = async () => {
+    const mockOrder = {
+      outletId: 'clw123...', // These should be real IDs in a real app
+      items: [
+        { productId: 'clp456...', quantity: 2, discount: 0 }
+      ],
+      notes: 'Test order'
+    };
+    
+    try {
+      const result = await PosFrontendService.createOrder(mockOrder);
+      if (result.mode === 'online') {
+        alert(`Order ${result.data.orderNo} created successfully via API!`);
+      } else {
+        alert('Saved locally due to offline/server issue. Will sync later.');
+      }
+    } catch (err) {
+      console.error('Failed to create order:', err);
+      alert('Order failed to save even locally.');
+    }
+  };
 
   if (loading) {
     return (
@@ -126,7 +151,7 @@ export default function DashboardPage() {
             <h3>Quick Actions</h3>
           </div>
           <div className="action-buttons">
-            <button className="action-btn primary">
+            <button className="action-btn primary" onClick={handleNewOrder}>
               <span className="action-icon">➕</span>
               New Order
             </button>

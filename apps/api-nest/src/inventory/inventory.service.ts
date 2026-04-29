@@ -402,4 +402,25 @@ export class InventoryService {
 
     return { success: true, data };
   }
+
+  async getProductByBarcode(user: AuthUserContext, barcode: string) {
+    const tenantId = this.requireTenant(user);
+
+    const data = await this.prisma.product.findFirst({
+      where: {
+        tenantId,
+        barcode,
+        isActive: true,
+      },
+      include: {
+        category: true,
+      },
+    });
+
+    if (!data) {
+      throw new NotFoundException('Product not found with this barcode');
+    }
+
+    return { success: true, data };
+  }
 }
