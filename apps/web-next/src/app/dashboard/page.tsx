@@ -26,6 +26,8 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
 
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+
   useEffect(() => {
     // TODO: Fetch real stats from API
     // For now, using mock data
@@ -39,6 +41,18 @@ export default function DashboardPage() {
     });
     setLoading(false);
   }, []);
+
+  const handleScan = async (barcode: string) => {
+    try {
+      console.log(`Searching for product with barcode: ${barcode}`);
+      const response = await apiFetch(`/inventory/products/barcode/${barcode}`);
+      if (response.success) {
+        alert(`Product Found: ${response.data.name}\nPrice: $${response.data.salePrice}`);
+      }
+    } catch (err) {
+      alert(`Product not found for barcode: ${barcode}`);
+    }
+  };
 
   const handleNewOrder = async () => {
     const mockOrder = {
@@ -74,6 +88,12 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout title="Dashboard">
+      <ScannerModal 
+        isOpen={isScannerOpen} 
+        onClose={() => setIsScannerOpen(false)} 
+        onScan={handleScan} 
+      />
+      
       <div className="dashboard-header">
         <h1>Dashboard</h1>
         <p className="small">Welcome back! Here's your business overview.</p>
@@ -154,6 +174,10 @@ export default function DashboardPage() {
             <button className="action-btn primary" onClick={handleNewOrder}>
               <span className="action-icon">➕</span>
               New Order
+            </button>
+            <button className="action-btn secondary" onClick={() => setIsScannerOpen(true)}>
+              <span className="action-icon">📷</span>
+              Scan Barcode
             </button>
             <button className="action-btn secondary">
               <span className="action-icon">📦</span>
