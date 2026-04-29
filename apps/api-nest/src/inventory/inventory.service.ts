@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { StockAction } from '../generated/prisma';
+import { StockAction } from '@prisma/client';
 import { AuditService } from '../common/audit/audit.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { AuthUserContext } from '../common/types/authenticated-request';
@@ -131,6 +131,19 @@ export class InventoryService {
 
     if (duplicate) {
       throw new BadRequestException('SKU already exists in this tenant');
+    }
+
+    if (dto.barcode) {
+      const duplicateBarcode = await this.prisma.product.findFirst({
+        where: {
+          tenantId,
+          barcode: dto.barcode,
+        },
+      });
+
+      if (duplicateBarcode) {
+        throw new BadRequestException('Barcode already exists in this tenant');
+      }
     }
 
     const created = await this.prisma.product.create({

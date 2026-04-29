@@ -1,5 +1,5 @@
 import { ConflictException, Injectable } from '@nestjs/common';
-import { IdempotencyStatus } from '../../generated/prisma';
+import { IdempotencyStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export type IdempotencyStartResult =

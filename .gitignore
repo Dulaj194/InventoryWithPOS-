@@ -4,6 +4,8 @@ node_modules
 .env.*.local
 dist
 coverage
+*.tsbuildinfo
+**/*.tsbuildinfo
 .next
 .dart_tool
 build

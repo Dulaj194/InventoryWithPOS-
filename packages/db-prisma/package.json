@@ -4,8 +4,15 @@
   "private": true,
   "main": "src/index.ts",
   "scripts": {
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:push:accept-data-loss": "prisma db push --accept-data-loss",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "prisma:push:accept-data-loss": "prisma db push --accept-data-loss",
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "prisma:seed": "tsx prisma/seed.ts"

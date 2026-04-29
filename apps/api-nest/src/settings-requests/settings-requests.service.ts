@@ -4,7 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SettingsRequestStatus } from '../generated/prisma';
+import { SettingsRequestStatus } from '@prisma/client';
 import { ROLE_CODES } from '../auth/constants/roles';
 import { AuditService } from '../common/audit/audit.service';
 import { PrismaService } from '../common/prisma/prisma.service';

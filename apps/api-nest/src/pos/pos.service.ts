@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
-import { OrderStatus, StockAction } from '../generated/prisma';
+import { OrderStatus, StockAction } from '@prisma/client';
 import { AuditService } from '../common/audit/audit.service';
 import { IdempotencyService } from '../common/idempotency/idempotency.service';
 import { PrismaService } from '../common/prisma/prisma.service';

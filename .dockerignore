@@ -6,6 +6,7 @@ npm-debug.log
 .vscode
 .idea
 coverage
+**/*.tsbuildinfo
 **/dist
 **/.next
 **/.dart_tool

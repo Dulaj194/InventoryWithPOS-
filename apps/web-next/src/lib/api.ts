@@ -1,5 +1,11 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
 
+export interface HealthResponse {
+  success: boolean;
+  service: string;
+  timestamp: string;
+}
+
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
   
@@ -22,4 +28,8 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
   }
 
   return response.json();
+}
+
+export function fetchHealth(): Promise<HealthResponse> {
+  return apiFetch('/health', { cache: 'no-store' });
 }

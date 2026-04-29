@@ -5,13 +5,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import bcrypt from 'bcryptjs';
 import {
   SubscriptionStatus,
   TenantStatus,
   User,
   UserStatus,
-} from '../generated/prisma';
+} from '@prisma/client';
+import bcrypt from 'bcryptjs';
 import { AuditService } from '../common/audit/audit.service';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { AuthUserContext } from '../common/types/authenticated-request';

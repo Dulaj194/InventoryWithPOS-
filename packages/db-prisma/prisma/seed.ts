@@ -227,10 +227,61 @@ async function seedSuperAdmin() {
   });
 }
 
+async function seedDemoTenant() {
+  const tenantCode = 'DEMO';
+  const tenant = await prisma.tenant.upsert({
+    where: { code: tenantCode },
+    update: {},
+    create: {
+      code: tenantCode,
+      name: 'Demo Shop',
+      email: 'demo@mypos.local',
+      status: 'ACTIVE',
+    },
+  });
+
+  const outlet = await prisma.outlet.upsert({
+    where: { tenantId_code: { tenantId: tenant.id, code: 'MAIN' } },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      code: 'MAIN',
+      name: 'Main Branch',
+      isMain: true,
+    },
+  });
+
+  const cashierEmail = 'cashier@demo.local';
+  const passwordHash = await bcrypt.hash('Cashier123!', 10);
+  
+  const cashierUser = await prisma.user.upsert({
+    where: { email: cashierEmail },
+    update: { tenantId: tenant.id, outletId: outlet.id },
+    create: {
+      email: cashierEmail,
+      fullName: 'Demo Cashier',
+      passwordHash,
+      tenantId: tenant.id,
+      outletId: outlet.id,
+      status: 'ACTIVE',
+    },
+  });
+
+  const cashierRole = await prisma.role.findUnique({ where: { code: 'CASHIER' } });
+  if (cashierRole) {
+    await prisma.userRole.upsert({
+      where: { userId_roleId: { userId: cashierUser.id, roleId: cashierRole.id } },
+      update: {},
+      create: { userId: cashierUser.id, roleId: cashierRole.id },
+    });
+  }
+}
+
 async function main() {
   await seedPermissionsAndRoles();
   await seedPlans();
   await seedSuperAdmin();
+  await seedDemoTenant();
   console.log('Database seed completed successfully.');
 }
 
