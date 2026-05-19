@@ -221,7 +221,7 @@ export class AuthService {
         },
       });
 
-      const tenantAdminRole = await tx.role.findUnique({
+      const tenantAdminRole = await tx.role.findFirst({
         where: { code: ROLE_CODES.TENANT_ADMIN },
       });
 
@@ -296,7 +296,7 @@ export class AuthService {
       throw new BadRequestException('Email already exists');
     }
 
-    const role = await this.prisma.role.findUnique({
+    const role = await this.prisma.role.findFirst({
       where: { code: dto.roleCode },
     });
     if (!role) {

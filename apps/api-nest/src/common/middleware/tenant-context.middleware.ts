@@ -1,6 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Response } from 'express';
 import { AuthenticatedRequest } from '../types/authenticated-request';
+import { tenantContext } from '../als/tenant.als';
 
 @Injectable()
 export class TenantContextMiddleware implements NestMiddleware {
@@ -10,8 +11,19 @@ export class TenantContextMiddleware implements NestMiddleware {
       req.outletId = req.user.outletId;
       req.userId = req.user.userId;
       req.isSuperAdmin = req.user.isSuperAdmin;
-    }
 
-    next();
+      const context = {
+        tenantId: req.user.tenantId,
+        userId: req.user.userId,
+        isSuperAdmin: req.user.isSuperAdmin || false,
+      };
+
+      // Wrap the rest of the request lifecycle in the ALS context
+      tenantContext.run(context, () => {
+        next();
+      });
+    } else {
+      next();
+    }
   }
 }

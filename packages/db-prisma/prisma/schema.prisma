@@ -100,7 +100,6 @@ model Tenant {
   payments         Payment[]
   stockLedgers     StockLedger[]
   settingsRequest  SettingsRequest[]
-  auditLogs        AuditLog[]
   idempotencyKeys  IdempotencyKey[]
   userAccesses     UserTenantAccess[]
 
@@ -115,8 +114,6 @@ model Plan {
   name          String         @db.VarChar(120)
   monthlyPrice  Decimal        @db.Decimal(10, 2)
   annualPrice   Decimal?       @db.Decimal(10, 2)
-  maxOutlets    Int            @default(1)
-  maxUsers      Int            @default(10)
   featureFlags  Json
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -210,7 +207,6 @@ model User {
   stockEntries      StockLedger[]      @relation("StockLedgerCreatedBy")
   settingsRequested SettingsRequest[]  @relation("SettingsRequestedBy")
   settingsReviewed  SettingsRequest[]  @relation("SettingsReviewedBy")
-  auditLogs         AuditLog[]
 
   @@index([tenantId, status])
   @@map("users")
@@ -251,7 +247,7 @@ model Outlet {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   deletedAt   DateTime?
-  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   users       User[]
   terminals   Terminal[]
   purchases   Purchase[]
@@ -274,7 +270,7 @@ model Terminal {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
   deletedAt  DateTime?
-  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   outlet     Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
   orders     Order[]
 
@@ -292,7 +288,7 @@ model Category {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
-  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   products    Product[]
 
   @@unique([tenantId, slug])
@@ -317,7 +313,7 @@ model Product {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   deletedAt      DateTime?
-  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   category       Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   purchaseItems  PurchaseItem[]
   orderItems     OrderItem[]
@@ -342,7 +338,7 @@ model Supplier {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   deletedAt DateTime?
-  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   purchases Purchase[]
 
   @@unique([tenantId, code])
@@ -362,7 +358,7 @@ model Customer {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
-  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   orders        Order[]
 
   @@unique([tenantId, code])
@@ -384,7 +380,7 @@ model Purchase {
   createdById  String?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
-  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   outlet       Outlet         @relation(fields: [outletId], references: [id], onDelete: Cascade)
   supplier     Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
   createdBy    User?          @relation("PurchaseCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
@@ -432,7 +428,7 @@ model Order {
   createdById String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict)
   outlet      Outlet      @relation(fields: [outletId], references: [id], onDelete: Cascade)
   terminal    Terminal?   @relation(fields: [terminalId], references: [id], onDelete: SetNull)
   customer    Customer?   @relation(fields: [customerId], references: [id], onDelete: SetNull)
@@ -532,25 +528,6 @@ model SettingsRequest {
 
   @@index([tenantId, status])
   @@map("settings_requests")
-}
-
-model AuditLog {
-  id        String   @id @default(cuid())
-  tenantId  String?
-  userId    String?
-  action    String   @db.VarChar(50)
-  entity    String   @db.VarChar(50)
-  entityId  String?  @db.VarChar(80)
-  payload   Json?
-  ipAddress String?  @db.VarChar(64)
-  userAgent String?  @db.VarChar(255)
-  createdAt DateTime @default(now())
-  tenant    Tenant?  @relation(fields: [tenantId], references: [id], onDelete: SetNull)
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([tenantId, createdAt])
-  @@index([entity, entityId])
-  @@map("audit_logs")
 }
 
 model IdempotencyKey {

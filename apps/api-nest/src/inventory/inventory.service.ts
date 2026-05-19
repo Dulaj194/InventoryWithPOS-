@@ -292,6 +292,7 @@ export class InventoryService {
 
       await tx.purchaseItem.createMany({
         data: dto.items.map((item) => ({
+          tenantId,
           purchaseId: purchase.id,
           productId: item.productId,
           quantity: item.quantity,

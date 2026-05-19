@@ -181,6 +181,7 @@ export class PosService {
 
         await tx.orderItem.createMany({
           data: lineItems.map((item) => ({
+            tenantId,
             orderId: order.id,
             productId: item.productId,
             productName: item.productName,
@@ -333,6 +334,7 @@ export class PosService {
 
         const payment = await tx.payment.create({
           data: {
+            tenantId,
             orderId: order.id,
             amount: dto.amount,
             method: dto.method,

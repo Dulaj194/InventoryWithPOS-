@@ -18,8 +18,9 @@ export class AuditService {
 
   async log(input: AuditInput): Promise<void> {
     try {
-      await this.prisma.auditLog.create({
-        data: {
+      // TODO: Migrate Audit logs to MongoDB / ElasticSearch. 
+      // Emitting to standard output for log stash temporarily
+      console.log('AUDIT_LOG:', JSON.stringify({
           tenantId: input.tenantId ?? null,
           userId: input.userId ?? null,
           action: input.action,
@@ -28,8 +29,7 @@ export class AuditService {
           payload: input.payload as object | undefined,
           ipAddress: input.ipAddress,
           userAgent: input.userAgent,
-        },
-      });
+      }));
     } catch {
       // Logging should never block main request flow.
     }
