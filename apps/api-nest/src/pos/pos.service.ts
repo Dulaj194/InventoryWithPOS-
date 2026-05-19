@@ -334,12 +334,12 @@ export class PosService {
 
         const payment = await tx.payment.create({
           data: {
-            tenantId,
-            orderId: order.id,
             amount: dto.amount,
             method: dto.method,
             referenceNo: dto.referenceNo,
-            receivedById: user.userId,
+            tenant: { connect: { id: tenantId } },
+            order: { connect: { id: order.id } },
+            ...(user.userId && { receivedBy: { connect: { id: user.userId } } }),
           },
         });
 
